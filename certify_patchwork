@@ -3,6 +3,7 @@ using MixedSubdivisions, HomotopyContinuation, DynamicPolynomials, LinearAlgebra
 function certify_patchwork(polySystem)
   F = polySystem
   neqs = length(F)
+  n =neqs
   # Define matrices that are the monomial support and coefficients of F
   A = support_coefficients(F)[1];
   B = support_coefficients(F)[2];

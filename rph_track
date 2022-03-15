@@ -3,6 +3,9 @@ using MixedSubdivisions, HomotopyContinuation, DynamicPolynomials, LinearAlgebra
 function rph_track(binomialSystem, targetSystem)
   F = targetSystem;
   neqs = length(F);
+  n = neqs;
+  varsF = variables(F);
+  F_eqs = expressions(F);
 
   binomial_systems = binomialSystem;
 
@@ -41,7 +44,7 @@ function rph_track(binomialSystem, targetSystem)
     poly_root = zeros(H[n,n]+1)
     poly_root[end] = 1;
     poly_root[1] = -1*B_new[end]
-    R = roots(poly_root)
+    R = PolynomialRoots.roots(poly_root)
 
     real_R = findall(x->norm(x)<10^(-10), imag.(R));
     test = [];
@@ -97,7 +100,7 @@ function rph_track(binomialSystem, targetSystem)
         for j in 1:t1
           a = abs.(rand(Int8))%10 + 1
           mon_vec = transpose(G_sup1[i])[j:j,1:end]
-          mon1 = G_sup2[i][j]*prod(x.^(transpose(mon_vec)))
+          mon1 = G_sup2[i][j]*prod(varsF.^(transpose(mon_vec)))
           append!(monomial_list, mon1*((1-t)^a))
         end
       append!(h1, [sum(monomial_list)])
@@ -114,7 +117,7 @@ function rph_track(binomialSystem, targetSystem)
   homotopy_systems = [];
   for i in 1:ncells
     combined_sys = homotopies[i] + binomial_systems[i]
-    append!(homotopy_systems,  [Homotopy(combined_sys, x, t)])
+    append!(homotopy_systems,  [Homotopy(combined_sys, varsF, t)])
   end
 
 
