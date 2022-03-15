@@ -1,0 +1,94 @@
+using MixedSubdivisions, HomotopyContinuation, DynamicPolynomials, LinearAlgebra
+
+function certify_patchwork(polySystem)
+  F = polySystem
+  neqs = length(F)
+  # Define matrices that are the monomial support and coefficients of F
+  A = support_coefficients(F)[1];
+  B = support_coefficients(F)[2];
+
+  vB = reduce(vcat, B);
+
+
+  # Use Log(|C|) to define lift
+  w1 = round.(-1*(10^6)*log.(abs.(support_coefficients(F)[2][1])));
+  w1 = convert.(Int,w1);
+  lifts = [w1];
+  for i in 2:neqs
+    w = round.(-1*(10^6)*log.(abs.(support_coefficients(F)[2][i])))
+    w = convert.(Int,w)
+    append!(lifts, [w])
+  end
+
+  # Compute mixed cells
+  cells = mixed_cells(A, lifts);
+  ncells = length(cells);
+
+
+
+  #Construct the Cayley matrix
+  mats = [];
+  for i in 1:length(A)
+    sz = size(A[i])[2]
+    m1 = A[i];
+    m2 = zeros(i-1, sz);
+    m3 = ones(1, sz);
+    m4 = zeros(neqs - i, sz)
+    M = [m1 ; m2 ; m3 ; m4]
+    append!(mats, [M])
+  end
+
+  M = reduce(hcat, mats);
+
+  ## Make inequality for each patchworked system
+  failed_cells = [];
+  success_cells = [];
+  scales = [];
+  for i in 1:ncells
+    in_cols = [];
+    mixedCells = indices(cells[i])
+    for j in 1:n
+      offset = sum(size(A[k])[2] for k in 1:j) - size(A[j])[2]
+      col1 = mixedCells[j][1] + offset
+      col2 = mixedCells[j][2] + offset
+      append!(in_cols, col1)
+      append!(in_cols, col2)
+    end
+
+    out_cols = [];
+    for j in 1:size(M)[2]
+      t = findall(x->x==j, in_cols)
+      if length(t) == 0
+        append!(out_cols, j)
+      end
+    end
+
+    fails = [];
+    for j in 1:length(out_cols)
+      cols = vcat(in_cols, out_cols[j]);
+      sort!(cols);
+      M_cells = M[1:end, cols];
+      null = nullspace(M_cells);
+      vBmod = vB[cols];
+      lhs = abs.(dot(null, log.(abs.(vBmod))))
+      rhs = log(size(M)[2])*norm(null,1)
+      if lhs < rhs
+        append!(fails, 1)
+        append!(scales, rhs/lhs)
+      end
+    end
+
+    if length(fails) == 0
+      append!(success_cells, i)
+    else
+      append!(failed_cells, i)
+      #println(failed)
+    end
+
+  end
+  if length(failed_cells)>0
+    return 0
+  else
+    return 1
+  end
+end
