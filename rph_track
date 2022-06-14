@@ -145,8 +145,8 @@ if Certification == true
                 return 0
             end
         end
-        return (real_sols,1)
+        return (convert(Array{Vector{Float64}},real_sols),1)
 else
-    return real_sols
+    return convert(Array{Vector{Float64}},real_sols)
 end
 end
